@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>要不要跟我約會？💕</title>
+<style>
+  :root {
+    --pink: #ff6b9a;
+    --pink-dark: #e14b7d;
+    --bg1: #ffe3ec;
+    --bg2: #fff5e6;
+    --text: #4a2b36;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    color: var(--text);
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+  .card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 12px 40px rgba(225, 75, 125, .2);
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    position: relative;
+  }
+  .emoji { font-size: 64px; line-height: 1; }
+  .gif { width: 180px; height: 180px; object-fit: contain; display: block; margin: 0 auto; }
+  .gif.fallback { font-size: 96px; line-height: 180px; }
+  .buttons { flex-wrap: wrap; }
+  .yes { transition: font-size .25s, padding .25s, background .2s; }
+  h1 { font-size: 26px; margin: 16px 0 8px; }
+  p { font-size: 17px; line-height: 1.6; margin: 8px 0; }
+  .buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 24px;
+    min-height: 70px;
+  }
+  button {
+    font: inherit;
+    font-size: 18px;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: transform .2s, background .2s;
+  }
+  .yes { background: var(--pink); color: #fff; }
+  .yes:hover { background: var(--pink-dark); }
+  .no { background: #eee; color: #777; }
+  .no.running { position: fixed; z-index: 10; }
+  .hidden { display: none; }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .option {
+    background: #fff0f5;
+    border: 2px solid transparent;
+    color: var(--text);
+    font-size: 16px;
+    padding: 12px 8px;
+    border-radius: 16px;
+  }
+  .option.selected { border-color: var(--pink); background: #ffd6e5; }
+  input[type="date"], input[type="time"] {
+    font: inherit;
+    font-size: 16px;
+    padding: 10px 12px;
+    border: 2px solid #ffd6e5;
+    border-radius: 12px;
+    width: 100%;
+    margin-top: 8px;
+  }
+  label { display: block; text-align: left; margin-top: 16px; font-weight: bold; }
+  .next { margin-top: 24px; width: 100%; }
+  .summary {
+    background: #fff0f5;
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 16px;
+    text-align: left;
+    font-size: 17px;
+    line-height: 1.8;
+  }
+  .heart {
+    position: fixed;
+    top: -40px;
+    font-size: 24px;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall { to { transform: translateY(110vh) rotate(360deg); opacity: .6; } }
+</style>
+</head>
+<body>
+
+<!-- 第 1 頁：邀請 -->
+<div class="card" id="page1">
+  <img class="gif" id="askGif" alt="🥺">
+  <h1 id="title"></h1>
+  <p>我想了很久，終於鼓起勇氣問妳……</p>
+  <div class="buttons">
+    <button class="yes" id="yesBtn">好啊 💕</button>
+    <button class="no" id="noBtn">不要</button>
+  </div>
+</div>
+
+<!-- 第 2 頁：選擇活動與日期 -->
+<div class="card hidden" id="page2">
+  <img class="gif" id="yayGif" alt="🥰">
+  <h1>耶！妳答應了！</h1>
+  <p>那我們要去做什麼呢？（可以選很多個喔）</p>
+  <div class="options" id="options"></div>
+  <label for="date">哪一天？📅</label>
+  <input type="date" id="date">
+  <label for="time">幾點？⏰</label>
+  <input type="time" id="time" value="18:00">
+  <button class="yes next" id="doneBtn">就這樣決定了！</button>
+</div>
+
+<!-- 第 3 頁：完成 -->
+<div class="card hidden" id="page3">
+  <div class="emoji">💖</div>
+  <h1>約好囉！</h1>
+  <div class="summary" id="summary"></div>
+  <p style="margin-top:16px;">把結果傳給我吧 👇</p>
+  <button class="yes next" id="shareBtn">用 LINE 傳給我 💬</button>
+  <p style="font-size:14px;color:#999;">（或直接截圖傳給我也可以 😘）</p>
+</div>
+
+<script>
+  // ===== 想改的內容都在這裡 =====
+  const HER_NAME = "寶貝";   // 女朋友的名字／暱稱
+  const ACTIVITIES = [
+    "🍜 吃好吃的", "🎬 看電影", "☕ 喝咖啡", "🌃 看夜景",
+    "🛍️ 逛街", "🏞️ 去走走", "🎡 去遊樂園", "🎲 妳決定！"
+  ];
+  // 「不要」每按一次，按鈕上的字就會變
+  const NO_TEXTS = [
+    "真的嗎？😢", "確定嗎？", "再想一下嘛～", "拜託拜託 🥺",
+    "我會哭喔 😭", "妳會後悔的！", "按錯了對吧？", "最後一次機會！", "抓不到我 😝"
+  ];
+  // 可愛動圖（如果載不到會自動換成表情符號）
+  const ASK_GIF = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExb2JqZ3J5c3VqZ3Z5/cLS1cfxvGOPVpf9g3y/giphy.gif";
+  const YAY_GIF = "https://media.tenor.com/gUiu1zyxfzYAAAAi/bear-kiss-bear-kisses.gif";
+  // ================================
+
+  document.getElementById("title").textContent = HER_NAME + "，要不要跟我去約會？";
+
+  function loadGif(id, src) {
+    const img = document.getElementById(id);
+    img.onerror = () => {
+      const div = document.createElement("div");
+      div.className = "gif fallback";
+      div.textContent = img.alt;
+      img.replaceWith(div);
+    };
+    img.src = src;
+  }
+  loadGif("askGif", ASK_GIF);
+  loadGif("yayGif", YAY_GIF);
+
+  const yesBtn = document.getElementById("yesBtn");
+  const noBtn = document.getElementById("noBtn");
+  let noCount = 0;
+
+  // 「不要」：字會變、「好啊」越變越大；按太多次之後「不要」會開始逃跑
+  function sayNo() {
+    noBtn.textContent = NO_TEXTS[Math.min(noCount, NO_TEXTS.length - 1)];
+    noCount++;
+    const size = 18 + noCount * 8;
+    yesBtn.style.fontSize = Math.min(size, 80) + "px";
+    yesBtn.style.padding = Math.min(12 + noCount * 4, 40) + "px " + Math.min(28 + noCount * 8, 80) + "px";
+    if (noCount >= NO_TEXTS.length - 1) runAway();
+  }
+  function runAway() {
+    noBtn.classList.add("running");
+    const maxX = window.innerWidth - noBtn.offsetWidth - 16;
+    const maxY = window.innerHeight - noBtn.offsetHeight - 16;
+    noBtn.style.left = Math.max(16, Math.random() * maxX) + "px";
+    noBtn.style.top = Math.max(16, Math.random() * maxY) + "px";
+  }
+  noBtn.addEventListener("click", sayNo);
+  noBtn.addEventListener("mouseenter", () => { if (noCount >= NO_TEXTS.length - 1) runAway(); });
+
+  function show(id) {
+    document.querySelectorAll(".card").forEach(c => c.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+  }
+
+  function hearts() {
+    for (let i = 0; i < 30; i++) {
+      const h = document.createElement("div");
+      h.className = "heart";
+      h.textContent = ["💕", "💖", "💗", "🌸"][i % 4];
+      h.style.left = Math.random() * 100 + "vw";
+      h.style.animationDuration = 2 + Math.random() * 3 + "s";
+      h.style.animationDelay = Math.random() * 1.5 + "s";
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), 6000);
+    }
+  }
+
+  yesBtn.addEventListener("click", () => {
+    noBtn.style.display = "none";
+    hearts();
+    show("page2");
+  });
+
+  // 活動選項
+  const optionsEl = document.getElementById("options");
+  ACTIVITIES.forEach(a => {
+    const b = document.createElement("button");
+    b.className = "option";
+    b.textContent = a;
+    b.addEventListener("click", () => b.classList.toggle("selected"));
+    optionsEl.appendChild(b);
+  });
+
+  // 預設日期：明天
+  const tomorrow = new Date(Date.now() + 86400000);
+  const dateInput = document.getElementById("date");
+  dateInput.min = new Date().toISOString().slice(0, 10);
+  dateInput.value = tomorrow.toISOString().slice(0, 10);
+
+  let resultText = "";
+  document.getElementById("doneBtn").addEventListener("click", () => {
+    const picked = [...document.querySelectorAll(".option.selected")].map(b => b.textContent);
+    if (picked.length === 0) { alert("先選一個想做的事嘛～ 🥺"); return; }
+    const d = dateInput.value ? new Date(dateInput.value + "T00:00") : null;
+    const week = ["日", "一", "二", "三", "四", "五", "六"];
+    const dateStr = d ? (d.getMonth() + 1) + " 月 " + d.getDate() + " 日（星期" + week[d.getDay()] + "）" : "還沒決定";
+    const time = document.getElementById("time").value || "還沒決定";
+
+    document.getElementById("summary").innerHTML =
+      "📅 日期：" + dateStr + "<br>⏰ 時間：" + time + "<br>💕 要做的事：" + picked.join("、");
+    resultText = "我答應跟你約會了！💕\n📅 " + dateStr + " " + time + "\n💕 " + picked.join("、");
+    hearts();
+    show("page3");
+  });
+
+  document.getElementById("shareBtn").addEventListener("click", () => {
+    window.open("https://line.me/R/share?text=" + encodeURIComponent(resultText), "_blank");
+  });
+</script>
+</body>
+</html>
