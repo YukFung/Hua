@@ -39,6 +39,16 @@
   .gif { width: 180px; height: 180px; object-fit: contain; display: block; margin: 0 auto; }
   .gif.fallback { font-size: 96px; line-height: 180px; }
   .buttons { flex-wrap: wrap; }
+  .us {
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 704 / 980;
+    object-fit: cover;
+    object-position: bottom;
+    border-radius: 16px;
+    display: block;
+    margin: 0 auto;
+  }
   .yes { transition: font-size .25s, padding .25s, background .2s; }
   h1 { font-size: 26px; margin: 16px 0 8px; }
   p { font-size: 17px; line-height: 1.6; margin: 8px 0; }
@@ -132,12 +142,10 @@
 
 <!-- 第 3 頁：完成 -->
 <div class="card hidden" id="page3">
-  <div class="emoji">💖</div>
+  <img class="us" src="us.jpg" alt="我們 💕">
   <h1>約好囉！</h1>
   <div class="summary" id="summary"></div>
-  <p style="margin-top:16px;">把結果傳給我吧 👇</p>
-  <button class="yes next" id="shareBtn">用 LINE 傳給我 💬</button>
-  <p style="font-size:14px;color:#999;">（或直接截圖傳給我也可以 😘）</p>
+  <p style="margin-top:16px;">📸 把這個畫面截圖傳給我，<br>或用 Instagram 私訊我吧 😘</p>
 </div>
 
 <script>
@@ -235,7 +243,6 @@
   dateInput.min = new Date().toISOString().slice(0, 10);
   dateInput.value = tomorrow.toISOString().slice(0, 10);
 
-  let resultText = "";
   document.getElementById("doneBtn").addEventListener("click", () => {
     const picked = [...document.querySelectorAll(".option.selected")].map(b => b.textContent);
     if (picked.length === 0) { alert("先選一個想做的事嘛～ 🥺"); return; }
@@ -246,13 +253,8 @@
 
     document.getElementById("summary").innerHTML =
       "📅 日期：" + dateStr + "<br>⏰ 時間：" + time + "<br>💕 要做的事：" + picked.join("、");
-    resultText = "我答應跟你約會了！💕\n📅 " + dateStr + " " + time + "\n💕 " + picked.join("、");
     hearts();
     show("page3");
-  });
-
-  document.getElementById("shareBtn").addEventListener("click", () => {
-    window.open("https://line.me/R/share?text=" + encodeURIComponent(resultText), "_blank");
   });
 </script>
 </body>
