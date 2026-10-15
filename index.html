@@ -84,7 +84,8 @@
     border-radius: 16px;
   }
   .option.selected { border-color: var(--pink); background: #ffd6e5; }
-  input[type="date"], input[type="time"] {
+  textarea { resize: vertical; text-align: left; }
+  input[type="date"], input[type="time"], textarea {
     font: inherit;
     font-size: 16px;
     padding: 10px 12px;
@@ -137,6 +138,8 @@
   <input type="date" id="date">
   <label for="time">幾點？⏰</label>
   <input type="time" id="time" value="18:00">
+  <label for="other">還有其他想做的、想說的嗎？✏️</label>
+  <textarea id="other" rows="3" placeholder="例如：想吃火鍋、想去拍貼、想跟你說……"></textarea>
   <button class="yes next" id="doneBtn">就這樣決定了！</button>
 </div>
 
@@ -245,14 +248,23 @@
 
   document.getElementById("doneBtn").addEventListener("click", () => {
     const picked = [...document.querySelectorAll(".option.selected")].map(b => b.textContent);
-    if (picked.length === 0) { alert("先選一個想做的事嘛～ 🥺"); return; }
+    if (picked.length === 0 && !document.getElementById("other").value.trim()) {
+      alert("先選一個想做的事，或寫下來嘛～ 🥺"); return;
+    }
     const d = dateInput.value ? new Date(dateInput.value + "T00:00") : null;
     const week = ["日", "一", "二", "三", "四", "五", "六"];
     const dateStr = d ? (d.getMonth() + 1) + " 月 " + d.getDate() + " 日（星期" + week[d.getDay()] + "）" : "還沒決定";
     const time = document.getElementById("time").value || "還沒決定";
 
     document.getElementById("summary").innerHTML =
-      "📅 日期：" + dateStr + "<br>⏰ 時間：" + time + "<br>💕 要做的事：" + picked.join("、");
+      "📅 日期：" + dateStr + "<br>⏰ 時間：" + time + "<br>💕 要做的事：" + (picked.join("、") || "看妳寫的 👇");
+    const other = document.getElementById("other").value.trim();
+    if (other) {
+      const line = document.createElement("div");
+      line.textContent = "✏️ 其他：" + other;  // textContent，避免她輸入的內容被當成 HTML
+      line.style.whiteSpace = "pre-wrap";
+      document.getElementById("summary").appendChild(line);
+    }
     hearts();
     show("page3");
   });
